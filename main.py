@@ -2,9 +2,8 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import os
 
-TOKEN = '7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ'
+TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
-
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
