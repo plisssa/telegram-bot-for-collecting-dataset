@@ -688,7 +688,7 @@ def handle_survey_choice(message):
 
 while True:
     try:
-        bot.polling(none_stop=True, skip_pending=True)
+        bot.infinity_polling(drop_pending_updates=True)
     except Exception as e:
         print(f"Ошибка: {e}")
         time.sleep(5)  # Пауза перед перезапуском
