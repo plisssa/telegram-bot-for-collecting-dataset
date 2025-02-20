@@ -505,22 +505,6 @@ def send_recording(call):
     if user_id in user_records and user_records[user_id]:
         bot.send_message(user_id, "⏳ Сохраняем ваши записи...")
 
-        for index, file_id in enumerate(user_records[user_id], start=1):
-            try:
-                file_info = bot.get_file(file_id)
-                downloaded_file = bot.download_file(file_info.file_path)
-
-                # Генерируем уникальный путь для сохранения файла
-                file_path = get_unique_filename(user_id, index)
-
-                # Сохраняем аудиофайл
-                with open(file_path, "wb") as f:
-                    f.write(downloaded_file)
-
-            except Exception as e:
-                bot.send_message(user_id, f"⚠️ Ошибка при сохранении файла: {str(e)}")
-                return
-
         bot.send_message(user_id, f"✅ Все записи сохранены!")
 
         # Очищаем записи
