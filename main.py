@@ -4,6 +4,7 @@ import os
 
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
+CHANNEL_ID = "@bot_260"  # Укажите username канала или его ID
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
@@ -11,6 +12,10 @@ user_last_message = {}  # Хранит ID последнего сообщени�
 user_last_voice = {}  # Хранит ID последних голосовых сообщений
 user_current_task = {}  # Хранит текущее задание пользователя
 user_waiting_for_action = {}  # Флаг, указывающий, ожидает ли бот выбора действия
+
+# Хранилище данных пользователей
+user_survey = {}  # Анкетные данные пользователей
+user_records = {}  # Записи пользователей
 
 # Главное меню с кнопкой "Начать"
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -297,22 +302,21 @@ def process_treatment(message):
     start_recording(message)
 
 
-def save_survey_to_file(user_id):
-    directory = "/Users/elizavetapuzyreva/Desktop/bot/voice_form"
-    if not os.path.exists(directory):
-        os.makedirs(directory)  # Создаём папку, если её нет
+def process_treatment(message):
+    user_id = message.chat.id
+    user_survey[user_id]["Проходит ли лечение"] = message.text
 
-    filename = os.path.join(directory, f"{user_id}_survey.txt")
-    version = 1
-    while os.path.exists(filename):
-        version += 1
-        filename = os.path.join(directory, f"{user_id}_survey_v{version}.txt")
+    # Формируем текст анкеты
+    survey_text = "📝 Анкета пользователя\n\n"
+    for key, value in user_survey[user_id].items():
+        survey_text += f"**{key}:** {value}\n"
 
-    with open(filename, "w", encoding="utf-8") as file:
-        for key, value in user_survey[user_id].items():
-            file.write(f"{key}: {value}\n")
+    # Отправляем анкету в канал
+    bot.send_message(CHANNEL_ID, survey_text, parse_mode="Markdown")
 
-    return filename  # Возвращаем путь к файлу
+    bot.send_message(user_id, "Спасибо! Теперь можете приступить к заданиям.", reply_markup=ReplyKeyboardRemove())
+    start_recording(message)
+
 
 @bot.message_handler(commands=['info'])
 def info(message):
@@ -410,15 +414,8 @@ def save_voice(message):
             bot.send_message(user_id, "⚠️ Сначала выберите действие из меню!")
         return
 
-    # Сохраняем голосовое сообщение
-    file_id = message.voice.file_id
-    if user_id not in user_records:
-        user_records[user_id] = []
-    user_records[user_id].append(file_id)
-
-    if user_id not in user_last_voice:
-        user_last_voice[user_id] = []
-    user_last_voice[user_id].append(message.message_id)
+    # Отправляем голосовое сообщение в канал
+    bot.send_voice(CHANNEL_ID, message.voice.file_id, caption=f"Голосовое сообщение от {message.chat.first_name}")
 
     # Уведомляем пользователя
     bot.send_message(user_id, "✅ Запись получена!")
@@ -436,6 +433,19 @@ def save_voice(message):
 
     # Устанавливаем флаг ожидания действия
     user_waiting_for_action[user_id] = True
+
+@bot.message_handler(content_types=['document', 'audio'])
+def forward_file(message):
+    """Пересылает файлы и аудио в канал без сохранения локально."""
+    user_id = message.chat.id
+
+    # Определяем тип файла
+    if message.content_type == "document":
+        bot.send_document(CHANNEL_ID, message.document.file_id, caption=f"Файл от {message.chat.first_name}")
+    elif message.content_type == "audio":
+        bot.send_audio(CHANNEL_ID, message.audio.file_id, caption=f"Аудиофайл от {message.chat.first_name}")
+
+    bot.send_message(user_id, "✅ Файл отправлен в канал!")
 
 @bot.callback_query_handler(func=lambda call: call.data == "next_task")
 def next_task(call):
@@ -588,6 +598,8 @@ SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
 if not os.path.exists(SAVE_PATH):
     os.makedirs(SAVE_PATH)
 
+
+
 @bot.message_handler(func=lambda message: message.text in ["Да", "Нет"])
 def handle_survey_choice(message):
     """Обрабатываем выбор пользователя"""
@@ -601,4 +613,4 @@ def handle_survey_choice(message):
         send_task(user_id)  # Переход к заданиям
 
 if __name__ == "__main__":
-    bot.polling(none_stop=True)
+    bot.infinity_polling()
