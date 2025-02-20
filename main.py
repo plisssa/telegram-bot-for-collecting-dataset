@@ -1,11 +1,9 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import os
-import time
 
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
-CHANNEL_ID = "@bot_260"  # Укажите username канала или его ID
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
@@ -13,10 +11,6 @@ user_last_message = {}  # Хранит ID последнего сообщени�
 user_last_voice = {}  # Хранит ID последних голосовых сообщений
 user_current_task = {}  # Хранит текущее задание пользователя
 user_waiting_for_action = {}  # Флаг, указывающий, ожидает ли бот выбора действия
-
-# Хранилище данных пользователей
-user_survey = {}  # Анкетные данные пользователей
-user_records = {}  # Записи пользователей
 
 # Главное меню с кнопкой "Начать"
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -31,20 +25,7 @@ action_menu.add(InlineKeyboardButton("🔄 Сброс", callback_data="reset")) 
 
 import random
 
-def send_audio_to_channel(user_id):
-    """Отправляет все записанные аудиофайлы в канал"""
-    if user_id not in user_records or not user_records[user_id]:
-        bot.send_message(user_id, "У вас нет записанных аудиофайлов.")
-        return
 
-    bot.send_message(CHANNEL_ID, f"🎤 Голосовые записи пользователя {user_id}:")
-
-    for file_id in user_records[user_id]:
-        bot.send_voice(CHANNEL_ID, file_id)
-
-    bot.send_message(user_id, "✅ Все записи отправлены!")
-
-    
 # Функция для загрузки предложений из файла task.txt
 def load_sentences_from_file(filename="task.txt"):
     try:
@@ -117,16 +98,6 @@ def get_text_for_user(task_number):
         return "Опишите, как выполнить одно из следующих действий по шагам:\n\n" + "\n".join(actions)
 
     return "Задание завершено!"
-
-
-def save_survey_to_file(user_id):
-    """Сохраняет анкету в текстовый файл и возвращает его путь."""
-    filename = f"survey_{user_id}.txt"
-    with open(filename, "w", encoding="utf-8") as file:
-        for key, value in user_survey[user_id].items():
-            file.write(f"{key}: {value}\n")
-    return filename
-
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -319,28 +290,38 @@ def process_treatment(message):
     user_id = message.chat.id
     user_survey[user_id]["Проходит ли лечение"] = message.text
 
-    # Сохраняем анкету в файл
-    filename = save_survey_to_file(user_id)
-
-    bot.send_message(user_id, "Спасибо! Теперь можете приступить к заданиям.", reply_markup=ReplyKeyboardRemove())
-    start_recording(message)
-
-
-def process_treatment(message):
-    user_id = message.chat.id
-    user_survey[user_id]["Проходит ли лечение"] = message.text
-
     # Формируем текст анкеты
-    survey_text = "📝 Анкета пользователя\n\n"
+    survey_text = f"📝 Новая анкета {user_id}\n\n"
     for key, value in user_survey[user_id].items():
-        survey_text += f"**{key}:** {value}\n"
+        survey_text += f"{key}: {value}\n"
+
+    # ID Telegram-канала (замени на свой)
+    CHANNEL_ID = "@bot_260"
 
     # Отправляем анкету в канал
-    bot.send_message(CHANNEL_ID, survey_text, parse_mode="Markdown")
+    bot.send_message(CHANNEL_ID, survey_text)
 
     bot.send_message(user_id, "Спасибо! Теперь можете приступить к заданиям.", reply_markup=ReplyKeyboardRemove())
     start_recording(message)
 
+
+
+def save_survey_to_file(user_id):
+    directory = "/Users/elizavetapuzyreva/Desktop/bot/voice_form"
+    if not os.path.exists(directory):
+        os.makedirs(directory)  # Создаём папку, если её нет
+
+    filename = os.path.join(directory, f"{user_id}_survey.txt")
+    version = 1
+    while os.path.exists(filename):
+        version += 1
+        filename = os.path.join(directory, f"{user_id}_survey_v{version}.txt")
+
+    with open(filename, "w", encoding="utf-8") as file:
+        for key, value in user_survey[user_id].items():
+            file.write(f"{key}: {value}\n")
+
+    return filename  # Возвращаем путь к файлу
 
 @bot.message_handler(commands=['info'])
 def info(message):
@@ -424,30 +405,29 @@ def send_task(user_id):
 
 
 @bot.message_handler(content_types=['voice'])
-def handle_voice(message):
+def save_voice(message):
+    """Сохраняет голосовое сообщение и предлагает выбрать действие"""
     user_id = message.chat.id
-    # Проверяем, ожидает ли бот голосового сообщения
-    if user_id not in user_current_task or user_waiting_for_action.get(user_id, False):
-        # Если кнопка "Начать" активна, выводим предупреждение без меню
-        if user_id not in user_current_task:
-            bot.send_message(user_id, "⚠️ Сначала нажмите или отправьте 'Начать', чтобы получить текст для записи!")
-        else:
-            bot.send_message(user_id, "⚠️ Сначала выберите действие из меню!")
+    CHANNEL_ID = "@bot_260"  # Укажите ваш Telegram-канал
+
+    # Проверяем, выбрал ли пользователь задание
+    if user_id not in user_current_task:
+        bot.send_message(user_id, "⚠️ Сначала нажмите 'Начать', чтобы получить текст для записи!")
         return
-    file_info = bot.get_file(message.voice.file_id)
-    file_path = file_info.file_path
-    save_path = f"voice_{user_id}_{len(user_records[user_id])}.ogg"
 
-    downloaded_file = bot.download_file(file_path)
-    with open(save_path, "wb") as new_file:
-        new_file.write(downloaded_file)
+    # Если бот ожидает выбора действия — сбрасываем флаг
+    if user_waiting_for_action.get(user_id, False):
+        user_waiting_for_action[user_id] = False  # Сброс флага ожидания
 
-    user_records[user_id].append(save_path)
+    # Сохраняем голосовое сообщение
+    file_id = message.voice.file_id
+    user_records.setdefault(user_id, []).append(file_id)
+
     # Уведомляем пользователя
-    bot.send_message(user_id, "✅ Запись получена!")
+    bot.send_message(user_id, "✅ Запись сохранена!")
 
     # Проверяем, выполнены ли все задания
-    if user_current_task[user_id] >= 6:  # Если это последнее задание
+    if user_current_task[user_id] >= 6:
         bot.send_message(user_id, "Вы выполнили все задания! "
                                   "Не забудьте нажать кнопку '📤 Отправить всё и закончить'.")
 
@@ -461,53 +441,21 @@ def handle_voice(message):
     user_waiting_for_action[user_id] = True
 
 
-@bot.message_handler(content_types=['voice'])
-def handle_voice(message):
-    user_id = message.chat.id
-    
-    if user_id not in user_records:
-        user_records[user_id] = []
-
-    # Сохраняем file_id, а не скачиваем файл
-    file_id = message.voice.file_id
-    user_records[user_id].append(file_id)
-
-    bot.send_message(user_id, "✅ Запись получена!")
-
-    # Проверяем, выполнены ли все задания
-    if user_current_task[user_id] >= 6:  # Последнее задание
-        bot.send_message(user_id, "Вы выполнили все задания! Не забудьте нажать '📤 Отправить всё и закончить'.")
-
-    # Предлагаем действия
-    task_number = user_current_task[user_id]
-    menu = get_action_menu(task_number)
-    msg = bot.send_message(user_id, "Выберите действие:", reply_markup=menu)
-    user_last_message[user_id] = msg.message_id
-
-    user_waiting_for_action[user_id] = True
-
-
-@bot.message_handler(content_types=['document', 'audio'])
-def forward_file(message):
-    """Пересылает файлы и аудио в канал без сохранения локально."""
-    user_id = message.chat.id
-
-    # Определяем тип файла
-    if message.content_type == "document":
-        bot.send_document(CHANNEL_ID, message.document.file_id, caption=f"Файл от {message.chat.first_name}")
-    elif message.content_type == "audio":
-        bot.send_audio(CHANNEL_ID, message.audio.file_id, caption=f"Аудиофайл от {message.chat.first_name}")
-
-    bot.send_message(user_id, "✅ Файл отправлен в канал!")
-
 @bot.callback_query_handler(func=lambda call: call.data == "next_task")
 def next_task(call):
-    """Переход к следующему заданию"""
+    """Отправляет все голосовые сообщения в канал перед следующим заданием"""
     user_id = call.message.chat.id
+    chat_id = "@bot_260"
 
-    # Увеличиваем номер задания
-    user_current_task[user_id] += 1
-    user_waiting_for_action[user_id] = False  # Сбрасываем флаг ожидания действия
+    # Если у пользователя есть сохранённые аудио — отправляем
+    if user_id in user_records and user_records[user_id]:
+        bot.send_message(user_id, "📤 Подождите ...")
+
+        for file_id in user_records[user_id]:
+            bot.send_voice(chat_id, file_id, caption=f"🆔 Пользователь: {user_id}")
+
+        # Очищаем список записей после отправки
+        user_records[user_id] = []
 
     # Удаляем предыдущее меню
     try:
@@ -515,8 +463,10 @@ def next_task(call):
     except Exception:
         pass
 
-    # Отправляем следующее задание
+    # Переходим к следующему заданию
+    user_current_task[user_id] += 1
     send_task(user_id)
+
 
 @bot.callback_query_handler(func=lambda call: call.data == "re_record")
 def re_record(call):
@@ -648,23 +598,8 @@ def get_random_image():
 
 # Папка для сохранения аудио
 SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
-
-# Функция отправки анкеты в канал
-def send_survey_to_channel(user_id):
-    """Отправляет анкету пользователя в канал"""
-    survey_text = f"📝 Анкета пользователя {user_id}\n\n"
-    for key, value in user_survey[user_id].items():
-        survey_text += f"**{key}:** {value}\n"
-
-    bot.send_message(CHANNEL_ID, survey_text, parse_mode="Markdown")
-    
-@bot.callback_query_handler(func=lambda call: call.data == "send")
-def send_all(call):
-    """Отправляет анкету и все записи в канал."""
-    user_id = call.message.chat.id
-    send_survey_to_channel(user_id)
-    send_audio_to_channel(user_id)
-    bot.send_message(user_id, "📤 Все данные отправлены.")
+if not os.path.exists(SAVE_PATH):
+    os.makedirs(SAVE_PATH)
 
 @bot.message_handler(func=lambda message: message.text in ["Да", "Нет"])
 def handle_survey_choice(message):
