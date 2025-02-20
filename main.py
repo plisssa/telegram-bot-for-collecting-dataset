@@ -39,11 +39,11 @@ def send_audio_to_channel(user_id):
 
     bot.send_message(CHANNEL_ID, f"🎤 Голосовые записи пользователя {user_id}:")
 
-    for audio_path in user_records[user_id]:
-        with open(audio_path, "rb") as audio:
-            bot.send_audio(CHANNEL_ID, audio)
+    for file_id in user_records[user_id]:
+        bot.send_voice(CHANNEL_ID, file_id)
 
     bot.send_message(user_id, "✅ Все записи отправлены!")
+
     
 # Функция для загрузки предложений из файла task.txt
 def load_sentences_from_file(filename="task.txt"):
