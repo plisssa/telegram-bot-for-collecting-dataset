@@ -169,7 +169,6 @@ def process_survey_choice(message):
         start_recording(message)
     else:
         bot.send_message(user_id, "Выберите 'Да' или 'Нет'.")
-        bot.register_next_step_handler(message, process_survey_choice)
 
 
 
