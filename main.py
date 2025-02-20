@@ -175,7 +175,8 @@ def process_survey_choice(message):
 user_survey = {}  # Словарь для хранения анкетных данных
 
 @bot.message_handler(commands=['help'])
-async def send_help(message):
+def send_help(message):
+    """Обработчик команды /info"""
     help_text = (
         "Чтобы записать голосовое сообщение в Telegram:\n"
         "1️⃣ Нажмите и удерживайте кнопку микрофона возле строки ввода (справа снизу).\n"
@@ -183,7 +184,7 @@ async def send_help(message):
         "3️⃣ Если запись успешно отправилась, то вы увидите ее в чате с ботом.\n\n"
         "Если возникли проблемы, проверьте настройки микрофона или напишите нам..️"
     )
-    await message.answer(help_text)
+    bot.send_message(message.chat.id, help_text)
 
 @bot.message_handler(commands=['пропустить'])
 def skip_question(message):
