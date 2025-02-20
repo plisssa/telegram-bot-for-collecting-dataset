@@ -595,12 +595,6 @@ def get_random_image():
 
     return image_path, image_name
 
-
-# Папка для сохранения аудио
-SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
-if not os.path.exists(SAVE_PATH):
-    os.makedirs(SAVE_PATH)
-
 @bot.message_handler(func=lambda message: message.text in ["Да", "Нет"])
 def handle_survey_choice(message):
     """Обрабатываем выбор пользователя"""
