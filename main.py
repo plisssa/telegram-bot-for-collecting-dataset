@@ -145,7 +145,6 @@ def process_survey_choice(message):
             "Команда Lab260 ❤️"
         )
         bot.send_message(user_id, txt1)
-        bot.register_next_step_handler(message, process_survey_choice)  # Ждем следующий ответ
         return
 
     if text == "/help":
@@ -158,7 +157,6 @@ def process_survey_choice(message):
         )
 
         bot.send_message(user_id, txt2)
-        bot.register_next_step_handler(message, process_survey_choice)  # Ждем следующий ответ
         return
 
     if text == "да" or text == "Да":
@@ -167,8 +165,6 @@ def process_survey_choice(message):
     if text == "нет" or text == "Нет":
         bot.send_message(user_id, "Хорошо, переходим к заданиям!", reply_markup=ReplyKeyboardRemove())  # Убираем кнопки
         start_recording(message)
-    else:
-        bot.send_message(user_id, "Выберите 'Да' или 'Нет'.")
 
 
 
