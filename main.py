@@ -606,6 +606,25 @@ def handle_survey_choice(message):
     else:
         bot.send_message(user_id, "Хорошо, переходим к заданиям.", reply_markup=ReplyKeyboardRemove())
         send_task(user_id)  # Переход к заданиям
+        
+@bot.callback_query_handler(func=lambda call: call.data in ["next_task", "send"])
+def process_task_action(call):
+    """Обрабатывает выбор действия после голосовой записи"""
+    user_id = call.message.chat.id
+
+    if call.data == "send":  # Отправить текущую запись и завершить
+        if user_id in user_records and user_records[user_id]:
+            last_voice_id = user_records[user_id][-1]  # Берем только последнюю запись
+            bot.send_voice(user_id, last_voice_id)  # Отправляем запись пользователю
+
+        bot.send_message(user_id, "✅ Ваши записи отправлены! Спасибо за участие!", reply_markup=main_menu)
+        user_records[user_id] = []  # Очищаем записи после отправки
+        return
+
+    if call.data == "next_task":  # Перейти к следующему заданию
+        user_current_task[user_id] += 1  # Увеличиваем номер задания
+        send_task(user_id)  # Отправляем новое задание
+
 
 while True:
     try:
