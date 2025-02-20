@@ -462,29 +462,21 @@ def handle_voice(message):
 
 
 @bot.message_handler(content_types=['voice'])
-def save_voice(message):
-    """Сохраняет голосовое сообщение"""
+def handle_voice(message):
     user_id = message.chat.id
+    
+    if user_id not in user_records:
+        user_records[user_id] = []
 
-    # Проверяем, ожидает ли бот голосового сообщения
-    if user_id not in user_current_task or user_waiting_for_action.get(user_id, False):
-        # Если кнопка "Начать" активна, выводим предупреждение без меню
-        if user_id not in user_current_task:
-            bot.send_message(user_id, "⚠️ Сначала нажмите или отправьте 'Начать', чтобы получить текст для записи!")
-        else:
-            bot.send_message(user_id, "⚠️ Сначала выберите действие из меню!")
-        return
+    # Сохраняем file_id, а не скачиваем файл
+    file_id = message.voice.file_id
+    user_records[user_id].append(file_id)
 
-    # Отправляем голосовое сообщение в канал
-    bot.send_voice(CHANNEL_ID, message.voice.file_id, caption=f"Голосовое сообщение от {message.chat.first_name}")
-
-    # Уведомляем пользователя
     bot.send_message(user_id, "✅ Запись получена!")
 
     # Проверяем, выполнены ли все задания
-    if user_current_task[user_id] >= 6:  # Если это последнее задание
-        bot.send_message(user_id, "Вы выполнили все задания! "
-                                  "Не забудьте нажать кнопку '📤 Отправить всё и закончить'.")
+    if user_current_task[user_id] >= 6:  # Последнее задание
+        bot.send_message(user_id, "Вы выполнили все задания! Не забудьте нажать '📤 Отправить всё и закончить'.")
 
     # Предлагаем действия
     task_number = user_current_task[user_id]
@@ -492,8 +484,8 @@ def save_voice(message):
     msg = bot.send_message(user_id, "Выберите действие:", reply_markup=menu)
     user_last_message[user_id] = msg.message_id
 
-    # Устанавливаем флаг ожидания действия
     user_waiting_for_action[user_id] = True
+
 
 @bot.message_handler(content_types=['document', 'audio'])
 def forward_file(message):
@@ -686,9 +678,5 @@ def handle_survey_choice(message):
         bot.send_message(user_id, "Хорошо, переходим к заданиям.", reply_markup=ReplyKeyboardRemove())
         send_task(user_id)  # Переход к заданиям
 
-while True:
-    try:
-        bot.infinity_polling(drop_pending_updates=True)
-    except Exception as e:
-        print(f"Ошибка: {e}")
-        time.sleep(5)  # Пауза перед перезапуском
+if name == "__main__":
+    bot.polling(none_stop=True)
