@@ -678,5 +678,9 @@ def handle_survey_choice(message):
         bot.send_message(user_id, "Хорошо, переходим к заданиям.", reply_markup=ReplyKeyboardRemove())
         send_task(user_id)  # Переход к заданиям
 
-if name == "__main__":
-    bot.polling(none_stop=True)
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        time.sleep(5)  # Пауза перед перезапуском
