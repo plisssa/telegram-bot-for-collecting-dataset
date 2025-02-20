@@ -30,7 +30,20 @@ action_menu.add(InlineKeyboardButton("🔄 Сброс", callback_data="reset")) 
 
 import random
 
+def send_audio_to_channel(user_id):
+    """Отправляет все записанные аудиофайлы в канал"""
+    if user_id not in user_records or not user_records[user_id]:
+        bot.send_message(user_id, "У вас нет записанных аудиофайлов.")
+        return
 
+    bot.send_message(CHANNEL_ID, f"🎤 Голосовые записи пользователя {user_id}:")
+
+    for audio_path in user_records[user_id]:
+        with open(audio_path, "rb") as audio:
+            bot.send_audio(CHANNEL_ID, audio)
+
+    bot.send_message(user_id, "✅ Все записи отправлены!")
+    
 # Функция для загрузки предложений из файла task.txt
 def load_sentences_from_file(filename="task.txt"):
     try:
@@ -103,6 +116,16 @@ def get_text_for_user(task_number):
         return "Опишите, как выполнить одно из следующих действий по шагам:\n\n" + "\n".join(actions)
 
     return "Задание завершено!"
+
+
+def save_survey_to_file(user_id):
+    """Сохраняет анкету в текстовый файл и возвращает его путь."""
+    filename = f"survey_{user_id}.txt"
+    with open(filename, "w", encoding="utf-8") as file:
+        for key, value in user_survey[user_id].items():
+            file.write(f"{key}: {value}\n")
+    return filename
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -399,6 +422,43 @@ def send_task(user_id):
     user_last_message[user_id] = msg.message_id
 
 
+@bot.message_handler(content_types=['voice'])
+def handle_voice(message):
+    user_id = message.chat.id
+    # Проверяем, ожидает ли бот голосового сообщения
+    if user_id not in user_current_task or user_waiting_for_action.get(user_id, False):
+        # Если кнопка "Начать" активна, выводим предупреждение без меню
+        if user_id not in user_current_task:
+            bot.send_message(user_id, "⚠️ Сначала нажмите или отправьте 'Начать', чтобы получить текст для записи!")
+        else:
+            bot.send_message(user_id, "⚠️ Сначала выберите действие из меню!")
+        return
+    file_info = bot.get_file(message.voice.file_id)
+    file_path = file_info.file_path
+    save_path = f"voice_{user_id}_{len(user_records[user_id])}.ogg"
+
+    downloaded_file = bot.download_file(file_path)
+    with open(save_path, "wb") as new_file:
+        new_file.write(downloaded_file)
+
+    user_records[user_id].append(save_path)
+    # Уведомляем пользователя
+    bot.send_message(user_id, "✅ Запись получена!")
+
+    # Проверяем, выполнены ли все задания
+    if user_current_task[user_id] >= 6:  # Если это последнее задание
+        bot.send_message(user_id, "Вы выполнили все задания! "
+                                  "Не забудьте нажать кнопку '📤 Отправить всё и закончить'.")
+
+    # Предлагаем действия
+    task_number = user_current_task[user_id]
+    menu = get_action_menu(task_number)
+    msg = bot.send_message(user_id, "Выберите действие:", reply_markup=menu)
+    user_last_message[user_id] = msg.message_id
+
+    # Устанавливаем флаг ожидания действия
+    user_waiting_for_action[user_id] = True
+
 
 @bot.message_handler(content_types=['voice'])
 def save_voice(message):
@@ -595,10 +655,23 @@ def get_random_image():
 
 # Папка для сохранения аудио
 SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
-if not os.path.exists(SAVE_PATH):
-    os.makedirs(SAVE_PATH)
 
+# Функция отправки анкеты в канал
+def send_survey_to_channel(user_id):
+    """Отправляет анкету пользователя в канал"""
+    survey_text = f"📝 Анкета пользователя {user_id}\n\n"
+    for key, value in user_survey[user_id].items():
+        survey_text += f"**{key}:** {value}\n"
 
+    bot.send_message(CHANNEL_ID, survey_text, parse_mode="Markdown")
+    
+@bot.callback_query_handler(func=lambda call: call.data == "send")
+def send_all(call):
+    """Отправляет анкету и все записи в канал."""
+    user_id = call.message.chat.id
+    send_survey_to_channel(user_id)
+    send_audio_to_channel(user_id)
+    bot.send_message(user_id, "📤 Все данные отправлены.")
 
 @bot.message_handler(func=lambda message: message.text in ["Да", "Нет"])
 def handle_survey_choice(message):
