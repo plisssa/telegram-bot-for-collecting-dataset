@@ -16,6 +16,8 @@ user_waiting_for_action = {}  # Флаг, указывающий, ожидает
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 main_menu.add(KeyboardButton("Начать"))
 
+SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
+
 # Меню действий с записью
 action_menu = InlineKeyboardMarkup()
 action_menu.add(InlineKeyboardButton("🔄 Перезаписать", callback_data="re_record"))
