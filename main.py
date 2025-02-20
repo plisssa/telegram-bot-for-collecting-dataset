@@ -508,9 +508,16 @@ def re_record(call):
 def send_recording(call):
     """Отправка всех записей"""
     user_id = call.message.chat.id
+    chat_id = "@bot_260"
 
     if user_id in user_records and user_records[user_id]:
         bot.send_message(user_id, "⏳ Сохраняем ваши записи...")
+        # Если у пользователя есть сохранённые аудио — отправляем
+        if user_id in user_records and user_records[user_id]:
+            bot.send_message(user_id, "📤 Подождите ...")
+
+            for file_id in user_records[user_id]:
+                bot.send_voice(chat_id, file_id, caption=f"🆔 Пользователь: {user_id}")
 
         bot.send_message(user_id, f"✅ Все записи сохранены!")
 
