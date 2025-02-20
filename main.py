@@ -168,7 +168,9 @@ def process_survey_choice(message):
         bot.send_message(user_id, "Хорошо, переходим к заданиям!", reply_markup=ReplyKeyboardRemove())  # Убираем кнопки
         start_recording(message)
     else:
-        print("Выберете Да или Нет.")
+        bot.send_message(user_id, "Выберите 'Да' или 'Нет'.")
+        bot.register_next_step_handler(message, process_survey_choice)
+
 
 
 
