@@ -130,8 +130,29 @@ def start(message):
 
 def process_survey_choice(message):
     user_id = message.chat.id
-    text = message.text.lower()
+    text = message.text.strip().lower()
+    
+    # Обрабатываем команды отдельно
+    if text.startswith("/"):
+        process_command(message)
+        bot.register_next_step_handler(message, process_survey_choice)  # Ждём "Да" или "Нет" снова
+        return
+    
+    # Обрабатываем ответ "Да" или "Нет"
+    if text == "да":
+        bot.send_message(user_id, "Какой у вас возраст?", reply_markup=ReplyKeyboardRemove())
+        bot.register_next_step_handler(message, process_age)
+    elif text == "нет":
+        bot.send_message(user_id, "Хорошо, переходим к заданиям!", reply_markup=ReplyKeyboardRemove())
+        start_recording(message)
+    else:
+        bot.send_message(user_id, "Пожалуйста, выберите 'Да' или 'Нет'.")
+        bot.register_next_step_handler(message, process_survey_choice)
 
+def process_command(message):
+    user_id = message.chat.id
+    text = message.text.lower()
+    
     if text == "/info":
         txt1 = (
             "Мы Lab260 - лаборатория искусственного интеллекта, разрабатывающая технологии машинного обучения.\n\n"
@@ -141,13 +162,10 @@ def process_survey_choice(message):
             "Мы гарантируем конфиденциальность — все записи используются только в исследовательских целях.\n\n"
             "По вопросам: plisssa2002@yandex.ru\n\n"
             "Давайте вместе сделаем технологии доступными для всех! 🚀\n\n"
-            "С уважением,\n"
-            "Команда Lab260 ❤️"
+            "С уважением,\nКоманда Lab260 ❤️"
         )
         bot.send_message(user_id, txt1)
-        return
-
-    if text == "/help":
+    elif text == "/help":
         txt2 = (
             "Чтобы записать голосовое сообщение в Telegram:\n"
             "1️⃣ Нажмите и удерживайте кнопку микрофона возле строки ввода (справа снизу).\n"
@@ -155,17 +173,7 @@ def process_survey_choice(message):
             "3️⃣ Если запись успешно отправилась, то вы увидите ее в чате с ботом.\n\n"
             "Если возникли проблемы, проверьте настройки микрофона или напишите нам..️"
         )
-
         bot.send_message(user_id, txt2)
-        return
-
-    if text == "да" or text == "Да":
-        bot.send_message(user_id, "Какой у вас возраст?", reply_markup=ReplyKeyboardRemove())  # Убираем кнопки
-        bot.register_next_step_handler(message, process_age)
-    if text == "нет" or text == "Нет":
-        bot.send_message(user_id, "Хорошо, переходим к заданиям!", reply_markup=ReplyKeyboardRemove())  # Убираем кнопки
-        start_recording(message)
-
 
 
 
