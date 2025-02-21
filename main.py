@@ -2,6 +2,8 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import os
 import time
+# Добавьте этот блок, чтобы запустить веб-сервер
+from flask import Flask, request
 
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
