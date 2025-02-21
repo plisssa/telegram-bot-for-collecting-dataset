@@ -19,13 +19,18 @@ URL = f"https://api.telegram.org/bot7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQ
 @app.route("/webhook", methods=["POST"])
 def webhook():
     update = request.get_json()
+    
+    print("🔹 Получен вебхук:", json.dumps(update, indent=2, ensure_ascii=False))  # Логируем JSON от Telegram
+    
     if "message" in update and "text" in update["message"]:
         chat_id = update["message"]["chat"]["id"]
         text = update["message"]["text"]
         response_text = f"Вы сказали: {text}"
-        
-        # Отправляем сообщение обратно в Telegram
-        requests.post(URL, json={"chat_id": chat_id, "text": response_text})
+
+        print(f"🟢 Отправка ответа в Telegram: chat_id={chat_id}, text={response_text}")  # Логируем данные перед отправкой
+
+        response = requests.post(URL, json={"chat_id": chat_id, "text": response_text})
+        print("🔄 Ответ Telegram API:", response.status_code, response.text)  # Логируем ответ от Telegram API
 
     return "OK", 200
     
