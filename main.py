@@ -7,6 +7,8 @@ import time
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
 
+bot.remove_webhook() 
+
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
 user_last_message = {}  # Хранит ID последнего сообщения бота
