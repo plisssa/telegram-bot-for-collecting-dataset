@@ -2,40 +2,10 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import os
 import time
-# Добавьте этот блок, чтобы запустить веб-сервер
-from flask import Flask, request
+
 
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Бот работает!"
-
-URL = f"https://api.telegram.org/bot7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ/sendMessage"
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    update = request.get_json()
-    
-    print("🔹 Получен вебхук:", json.dumps(update, indent=2, ensure_ascii=False))  # Логируем JSON от Telegram
-    
-    if "message" in update and "text" in update["message"]:
-        chat_id = update["message"]["chat"]["id"]
-        text = update["message"]["text"]
-        response_text = f"Вы сказали: {text}"
-
-        print(f"🟢 Отправка ответа в Telegram: chat_id={chat_id}, text={response_text}")  # Логируем данные перед отправкой
-
-        response = requests.post(URL, json={"chat_id": chat_id, "text": response_text})
-        print("🔄 Ответ Telegram API:", response.status_code, response.text)  # Логируем ответ от Telegram API
-
-    return "OK", 200
-    
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
