@@ -6,9 +6,6 @@ import time
 TOKEN = '7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ'
 bot = telebot.TeleBot(TOKEN)
 
-bot.remove_webhook() 
-bot.polling(none_stop=True)
-
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
 user_last_message = {}  # Хранит ID последнего сообщения бота
@@ -629,9 +626,5 @@ def process_task_action(call):
         send_task(user_id)  # Отправляем новое задание
 
 
-while True:
-    try:
-        bot.polling(none_stop=True)
-    except Exception as e:
-        print(f"Ошибка: {e}")
-        time.sleep(5)  # Пауза перед перезапуском
+if __name__ == "__main__":
+    bot.infinity_polling()
