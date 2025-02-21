@@ -3,8 +3,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 import os
 import time
 
-
-TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
+TOKEN = '7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ'
 bot = telebot.TeleBot(TOKEN)
 
 bot.remove_webhook() 
