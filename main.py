@@ -17,6 +17,13 @@ app = Flask(__name__)
 def home():
     return "Бот работает!"
 
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    update = request.get_json()
+    print(update)  # Для отладки
+    return "OK", 200
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # Используем порт из переменной окружения или 5000 по умолчанию
     app.run(host='0.0.0.0', port=port)
