@@ -14,13 +14,21 @@ app = Flask(__name__)
 def home():
     return "Бот работает!"
 
+URL = f"https://api.telegram.org/bot7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ/sendMessage"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     update = request.get_json()
-    print(update)  # Для отладки
-    return "OK", 200
+    if "message" in update and "text" in update["message"]:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"]["text"]
+        response_text = f"Вы сказали: {text}"
+        
+        # Отправляем сообщение обратно в Telegram
+        requests.post(URL, json={"chat_id": chat_id, "text": response_text})
 
+    return "OK", 200
+    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 
