@@ -8,9 +8,6 @@ from flask import Flask, request
 TOKEN = os.getenv("TOKEN")  # Получаем токен из переменной окружения
 bot = telebot.TeleBot(TOKEN)
 
-import os
-from flask import Flask
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -24,10 +21,8 @@ def webhook():
     print(update)  # Для отладки
     return "OK", 200
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Используем порт из переменной окружения или 5000 по умолчанию
-    app.run(host='0.0.0.0', port=port)
-
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
