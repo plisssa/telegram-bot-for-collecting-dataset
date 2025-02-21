@@ -8,6 +8,7 @@ TOKEN = os.getenv("TOKEN")  # Получаем токен из переменн�
 bot = telebot.TeleBot(TOKEN)
 
 bot.remove_webhook() 
+bot.polling(none_stop=True)
 
 # Хранилище данных пользователей
 user_records = {}  # Хранит записи пользователей
