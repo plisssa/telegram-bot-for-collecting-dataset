@@ -3,7 +3,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 import os
 import time
 
-TOKEN = '7562294981:AAGL_ooSrrh-p3amBZBescmkLkX3agphQgQ'
+TOKEN = ''
 bot = telebot.TeleBot(TOKEN)
 
 # Хранилище данных пользователей
@@ -17,7 +17,7 @@ user_waiting_for_action = {}  # Флаг, указывающий, ожидает
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 main_menu.add(KeyboardButton("Начать"))
 
-SAVE_PATH = "/Users/elizavetapuzyreva/Desktop/bot/voice_records"
+SAVE_PATH = "/bot/voice_records"
 
 # Меню действий с записью
 action_menu = InlineKeyboardMarkup()
